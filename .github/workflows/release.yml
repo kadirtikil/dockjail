@@ -1,0 +1,69 @@
+name: Release
+
+# Push a tag such as v0.1.0 (it has to match the version in Cargo.toml) to build a release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Check that the tag matches Cargo.toml
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          cargo_version=$(cargo pkgid | sed 's/.*[#@]//')
+          if [ "$version" != "$cargo_version" ]; then
+            echo "tag $GITHUB_REF_NAME does not match Cargo.toml version $cargo_version"
+            exit 1
+          fi
+
+      - run: cargo test
+
+      - name: Build universal binary
+        run: |
+          cargo build --release --target aarch64-apple-darwin
+          cargo build --release --target x86_64-apple-darwin
+          lipo -create -output dockjail \
+            target/aarch64-apple-darwin/release/dockjail \
+            target/x86_64-apple-darwin/release/dockjail
+          # Ad-hoc signature: runs everywhere, but macOS asks for the Accessibility permission again after each update.
+          codesign --force --sign - --identifier local.dockjail dockjail
+          codesign --verify --strict dockjail
+
+      - name: Package
+        run: |
+          name="dockjail-${GITHUB_REF_NAME#v}-universal-apple-darwin"
+          mkdir "$name"
+          cp dockjail LICENSE "$name"/
+          tar -czf "$name.tar.gz" "$name"
+          shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dockjail-*.tar.gz dockjail-*.sha256 --title "$GITHUB_REF_NAME" --generate-notes
+
+      # The repository doubles as the Homebrew tap: Formula/dockjail.rb on main points to this release.
+      - name: Update Homebrew formula on main
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          sha256=$(cut -d' ' -f1 dockjail-*.tar.gz.sha256)
+          git fetch origin main
+          git checkout -B main origin/main
+          mkdir -p Formula
+          scripts/render-formula.sh "$version" "$sha256" "$GITHUB_REPOSITORY" > Formula/dockjail.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/dockjail.rb
+          git commit -m "chore: update formula to $version"
+          git push origin main
