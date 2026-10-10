@@ -3,8 +3,8 @@
 class Dockjail < Formula
   desc "Keeps the macOS Dock locked to one display"
   homepage "https://github.com/mehmetmuejde/dockjail"
-  url "https://github.com/mehmetmuejde/dockjail/releases/download/v0.1.1/dockjail-0.1.1-universal-apple-darwin.tar.gz"
-  sha256 "745e7edc25ea3bd306f7f08fd1bdc4c6392a424d308a6e086aa1664855101d47"
+  url "https://github.com/mehmetmuejde/dockjail/releases/download/v0.1.2/dockjail-0.1.2-universal-apple-darwin.tar.gz"
+  sha256 "8aecae8f93b975df656f9c1aae0fc2301ed37eb6f2605f63ebf24c442247f690"
   license "MIT"
 
   depends_on :macos
