@@ -24,6 +24,7 @@ pub const kAXValueTypeCGPoint: AXValueType = 1;
 unsafe extern "C" {
     pub static kAXTrustedCheckOptionPrompt: CFStringRef;
 
+    pub fn AXIsProcessTrusted() -> u8;
     pub fn AXIsProcessTrustedWithOptions(options: CFDictionaryRef) -> u8;
     pub fn AXUIElementCreateApplication(pid: libc::pid_t) -> AXUIElementRef;
     pub fn AXUIElementCopyAttributeValue(

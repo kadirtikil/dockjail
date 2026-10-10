@@ -14,6 +14,11 @@ fn plist_path() -> Result<PathBuf, String> {
     Ok(home()?.join(format!("Library/LaunchAgents/{LABEL}.plist")))
 }
 
+/// The file the agent's output goes to.
+pub fn log_path() -> Result<PathBuf, String> {
+    Ok(home()?.join("Library/Logs/dockjail.log"))
+}
+
 /// launchd domain of the current user's GUI session.
 fn domain() -> String {
     format!("gui/{}", unsafe { libc::getuid() })
@@ -27,8 +32,7 @@ pub fn install(run_args: &[String]) -> Result<PathBuf, String> {
     let mut arguments = vec![exe.display().to_string(), "run".to_string()];
     arguments.extend(run_args.iter().cloned());
 
-    let log = home()?.join("Library/Logs/dockjail.log");
-    let plist = render_plist(&arguments, &log.display().to_string());
+    let plist = render_plist(&arguments, &log_path()?.display().to_string());
 
     let path = plist_path()?;
     if let Some(dir) = path.parent() {

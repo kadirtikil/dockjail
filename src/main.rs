@@ -30,6 +30,12 @@ enum Command {
     },
     /// Unlock the Dock and stop locking at login
     Off,
+    /// Print the last lines of the login agent's log
+    Log {
+        /// Number of lines to show
+        #[arg(short = 'n', long, default_value_t = 50)]
+        lines: usize,
+    },
     /// Lock the Dock to the given display in the foreground (used by the login item)
     #[command(hide = true)]
     Run {
@@ -44,6 +50,7 @@ fn main() -> ExitCode {
         Command::Check => check(),
         Command::On { index } => on(index),
         Command::Off => off(),
+        Command::Log { lines } => log(lines),
         Command::Run { display } => run(display),
     };
     match result {
@@ -55,15 +62,21 @@ fn main() -> ExitCode {
     }
 }
 
+/// For commands that need the permission: never asks, only points to `dockjail check`.
 fn require_permission() -> Result<(), String> {
-    if permission::request() {
+    if permission::is_trusted() {
         return Ok(());
     }
-    Err(format!("accessibility permission missing.\n{}", permission::HINT))
+    Err(format!("accessibility permission missing. Run `dockjail check` first.\n{}", permission::HINT))
 }
 
 fn check() -> Result<(), String> {
-    require_permission()?;
+    if !permission::request() {
+        return Err(format!(
+            "accessibility permission missing.\n{}\nThen run `dockjail check` again.",
+            permission::HINT
+        ));
+    }
     if let Ok(exe) = std::env::current_exe() {
         println!("accessibility permission granted for the program running {}", exe.display());
     }
@@ -110,6 +123,23 @@ fn on(index: Option<usize>) -> Result<(), String> {
 
 fn off() -> Result<(), String> {
     println!("{}", if launch_agent::uninstall()? { "Dock unlocked" } else { "Dock was not locked" });
+    Ok(())
+}
+
+fn log(lines: usize) -> Result<(), String> {
+    let path = launch_agent::log_path()?;
+    let text = match std::fs::read_to_string(&path) {
+        Ok(text) => text,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            println!("no log yet ({})", path.display());
+            return Ok(());
+        }
+        Err(e) => return Err(format!("cannot read {}: {e}", path.display())),
+    };
+    let all: Vec<&str> = text.lines().collect();
+    for line in &all[all.len().saturating_sub(lines)..] {
+        println!("{line}");
+    }
     Ok(())
 }
 

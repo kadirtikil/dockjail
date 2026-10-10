@@ -7,7 +7,13 @@ use core_foundation::string::CFString;
 
 use crate::ffi;
 
+/// Checks the permission without showing a dialog.
+pub fn is_trusted() -> bool {
+    unsafe { ffi::AXIsProcessTrusted() != 0 }
+}
+
 /// Checks the permission and lets macOS show its "grant access" dialog if it is missing.
+/// The dialog does not block: the answer is the state at the time of the call.
 pub fn request() -> bool {
     unsafe {
         let key = CFString::wrap_under_get_rule(ffi::kAXTrustedCheckOptionPrompt);

@@ -8,16 +8,19 @@ locked one, so the Dock never sees them and stays where it is.
 
 ## Quick start
 
-1. **Install** with Homebrew. The binary is universal (Apple Silicon and Intel).
+1. **Install** with Homebrew. The binary is universal (Apple Silicon and Intel). Recent Homebrew
+   versions only load formulae from third-party taps after you trust them.
 
    ```bash
    brew tap mehmetmuejde/dockjail https://github.com/mehmetmuejde/dockjail
+   brew trust mehmetmuejde/dockjail
    brew install dockjail
    ```
 
 2. **Allow your terminal** to use the Accessibility API. Run the check; if the permission is
    missing, macOS shows a prompt. Enable your terminal app in System Settings → Privacy & Security →
-   Accessibility, then run the check again.
+   Accessibility, then run the check again until it reports the permission as granted. `dockjail on`
+   never asks for the permission itself and refuses to lock the Dock until the check passes.
 
    ```bash
    dockjail check
@@ -49,6 +52,7 @@ locked one, so the Dock never sees them and stays where it is.
 | `dockjail displays` | Lists displays with index, UUID, frame, and which one shows the Dock |
 | `dockjail on [INDEX]` | Locks the Dock to a display and starts at every login |
 | `dockjail off` | Unlocks the Dock and stops starting at login |
+| `dockjail log [-n LINES]` | Prints the last lines (default 50) of the login agent's log |
 
 The agent stores the display's hardware UUID, so the lock survives reboots and cable or port
 changes. The index is only used to pick the display.
@@ -82,8 +86,8 @@ binary that is gone. Remove the `dockjail` entry from the Accessibility list you
 - Only a Dock at the bottom of the screen is supported.
 - Hot corners in the bottom corners of the other displays do not fire, because those mouse
   movements are dropped.
-- The agent logs to `~/Library/Logs/dockjail.log` and restarts itself if it fails, for example
-  while the permission is still missing.
+- The agent logs to `~/Library/Logs/dockjail.log` (read it with `dockjail log`) and restarts itself
+  if it fails, for example while the permission is still missing.
 
 ## Build from source
 
