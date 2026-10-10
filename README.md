@@ -36,10 +36,11 @@ locked one, so the Dock never sees them and stays where it is.
    ```
 
 4. **Allow the login agent.** `dockjail on` starts the lock and registers a LaunchAgent that
-   starts it at every login. The agent runs without a terminal and needs its own entry: add the
-   `dockjail` binary (path from `which dockjail`) in the same Accessibility list and enable it.
-   In the file dialog, Cmd+Shift+G lets you type the path. The agent retries every 30 seconds, so
-   it starts shortly after.
+   starts it at every login. The agent is a separate program without a terminal and needs its own
+   entry. `dockjail on` checks after a few seconds whether the agent is running. If not, it opens
+   the Accessibility page: enable `dockjail` there (if it is missing from the list, add the binary
+   from `which dockjail`; Cmd+Shift+G lets you type the path). The agent retries every 30 seconds,
+   so it starts shortly after.
 
 5. **Check that it works.** Move the cursor to the bottom edge of another display: the Dock stays.
    `pgrep -x dockjail` prints a process id while the lock is running.

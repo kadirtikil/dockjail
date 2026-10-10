@@ -6,6 +6,7 @@ mod permission;
 mod tap;
 
 use std::process::ExitCode;
+use std::time::Duration;
 
 use clap::{Parser, Subcommand};
 
@@ -44,6 +45,9 @@ enum Command {
     },
 }
 
+/// How long `on` waits before it checks that the agent survived its start.
+const AGENT_START_WAIT: Duration = Duration::from_secs(3);
+
 fn main() -> ExitCode {
     let result = match Cli::parse().command {
         Command::Displays => displays(),
@@ -77,9 +81,8 @@ fn check() -> Result<(), String> {
             permission::HINT
         ));
     }
-    if let Ok(exe) = std::env::current_exe() {
-        println!("accessibility permission granted for the program running {}", exe.display());
-    }
+    println!("accessibility permission granted to the program that started this command (your terminal)");
+    println!("the login agent is a separate program: `dockjail on` checks it and tells you if it needs its own entry");
     Ok(())
 }
 
@@ -113,11 +116,17 @@ fn on(index: Option<usize>) -> Result<(), String> {
     };
 
     let path = launch_agent::install(std::slice::from_ref(&uuid))?;
-    println!("Dock locked to display {uuid}");
     println!("installed {}", path.display());
-    if let Ok(exe) = std::env::current_exe() {
-        println!("grant the accessibility permission to {} if macOS asks for it", exe.display());
+
+    // The agent is a separate program and needs its own Accessibility entry. Without it, it exits at once.
+    std::thread::sleep(AGENT_START_WAIT);
+    if !launch_agent::is_running() {
+        permission::open_settings();
+        return Err("the login agent is not running yet. It needs its own Accessibility permission: enable \
+             `dockjail` in the System Settings page that just opened. The agent retries every 30 seconds."
+            .to_string());
     }
+    println!("Dock locked to display {uuid}");
     Ok(())
 }
 

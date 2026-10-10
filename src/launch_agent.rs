@@ -47,6 +47,15 @@ pub fn install(run_args: &[String]) -> Result<PathBuf, String> {
     Ok(path)
 }
 
+/// Whether launchd currently reports the agent as running.
+pub fn is_running() -> bool {
+    Command::new("/bin/launchctl")
+        .args(["print", &format!("{}/{LABEL}", domain())])
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).lines().any(|l| l.trim() == "state = running"))
+        .unwrap_or(false)
+}
+
 /// Stops the agent and removes its plist. Returns false if nothing was installed.
 pub fn uninstall() -> Result<bool, String> {
     let path = plist_path()?;

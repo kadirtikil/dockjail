@@ -7,6 +7,13 @@ use core_foundation::string::CFString;
 
 use crate::ffi;
 
+/// Opens the Accessibility page of System Settings.
+pub fn open_settings() {
+    let _ = std::process::Command::new("/usr/bin/open")
+        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+        .status();
+}
+
 /// Checks the permission without showing a dialog.
 pub fn is_trusted() -> bool {
     unsafe { ffi::AXIsProcessTrusted() != 0 }
