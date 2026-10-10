@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/dockjail.png" alt="dockjail icon" width="160">
+  <img src="assets/dockjail.png" alt="dockjail icon" width="320">
 </p>
 
 # dockjail
