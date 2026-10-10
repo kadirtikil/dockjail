@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon.png" alt="dockjail icon" width="160">
+</p>
+
 # dockjail
 
 Keeps the macOS Dock locked to one display in multi-monitor setups.
