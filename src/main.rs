@@ -72,18 +72,16 @@ fn require_permission() -> Result<(), String> {
     if permission::is_trusted() {
         return Ok(());
     }
-    Err(format!("accessibility permission missing. Run `dockjail check` first.\n{}", permission::HINT))
+    Err(format!("accessibility permission missing. Run `dockjail check` first.\n{}", permission::terminal_hint()))
 }
 
 fn check() -> Result<(), String> {
     if !permission::request() {
-        return Err(format!(
-            "accessibility permission missing.\n{}\nThen run `dockjail check` again.",
-            permission::HINT
-        ));
+        return Err(format!("accessibility permission missing.\n{}", permission::terminal_hint()));
     }
-    println!("accessibility permission granted to the program that started this command (your terminal)");
-    println!("the login agent is a separate program: `dockjail on` checks it and tells you if it needs its own entry");
+    println!("accessibility permission granted to {}", permission::terminal_name());
+    println!("next: `dockjail on` locks the Dock. The login agent it starts is a separate program and asks for");
+    println!("its own permission; `dockjail on` tells you if it is missing.");
     Ok(())
 }
 
@@ -123,9 +121,10 @@ fn on(index: Option<usize>) -> Result<(), String> {
     std::thread::sleep(AGENT_START_WAIT);
     if !launch_agent::is_running() {
         permission::open_settings();
-        return Err("the login agent is not running yet. It needs its own Accessibility permission: enable \
-             `dockjail` in the System Settings page that just opened. The agent retries every 30 seconds."
-            .to_string());
+        return Err(format!(
+            "the login agent is not running yet (System Settings just opened).\n{}",
+            permission::agent_hint()
+        ));
     }
     println!("Dock locked to display {uuid}");
     Ok(())
@@ -154,7 +153,11 @@ fn log(lines: usize) -> Result<(), String> {
 }
 
 fn run(display: String) -> Result<(), String> {
-    require_permission()?;
+    // Started by launchd, dockjail is its own responsible process: asking (not just checking) is what
+    // adds it to the Accessibility list, so the user has an entry to enable.
+    if !permission::request() {
+        return Err(format!("accessibility permission missing.\n{}", permission::agent_hint()));
+    }
     logging::log!("locking the Dock to display {display}");
     tap::run(display)
 }

@@ -21,14 +21,19 @@ locked one, so the Dock never sees them and stays where it is.
    brew install dockjail
    ```
 
-2. **Allow your terminal** to use the Accessibility API. Run the check; if the permission is
-   missing, macOS shows a prompt. Enable your terminal app in System Settings → Privacy & Security →
-   Accessibility, then run the check again until it reports the permission as granted. `dockjail on`
-   never asks for the permission itself and refuses to lock the Dock until the check passes.
+2. **Allow your terminal app** to use the Accessibility API. macOS gives the permission of a command
+   to the app it runs in, so the app that needs it is your terminal (Terminal, iTerm, Warp, Ghostty,
+   or your editor for its built-in terminal), not dockjail. Run the check; if the permission is
+   missing, macOS shows a prompt and dockjail tells you which app to enable.
 
    ```bash
    dockjail check
    ```
+
+   Enable that app in System Settings → Privacy & Security → Accessibility (add it with "+" from
+   `/Applications` if it is not listed), then **quit it completely with Cmd+Q and open it again**:
+   macOS applies the permission only after a restart. Run the check again until it reports the
+   permission as granted. `dockjail on` refuses to lock the Dock until the check passes.
 
 3. **Pick the display.** Drag the Dock to the display it should stay on, then lock it there. To pick
    a display by its index instead, list them first.
@@ -41,10 +46,12 @@ locked one, so the Dock never sees them and stays where it is.
 
 4. **Allow the login agent.** `dockjail on` starts the lock and registers a LaunchAgent that
    starts it at every login. The agent is a separate program without a terminal and needs its own
-   entry. `dockjail on` checks after a few seconds whether the agent is running. If not, it opens
-   the Accessibility page: enable `dockjail` there (if it is missing from the list, add the binary
-   from `which dockjail`; Cmd+Shift+G lets you type the path). The agent retries every 30 seconds,
-   so it starts shortly after.
+   entry, separate from your terminal's. On its first start it asks for the permission, which adds
+   `dockjail` to the Accessibility list. `dockjail on` checks after a few seconds whether the agent
+   is running. If not, it opens the Accessibility page: enable `dockjail` there. If it is missing
+   from the list, click "+", press Cmd+Shift+G and enter the path that `dockjail on` prints, the
+   same as `realpath "$(which dockjail)"`. Homebrew's `/opt/homebrew/bin/dockjail` is only a symlink
+   to it. The agent retries every 30 seconds, so it starts shortly after.
 
 5. **Check that it works.** Move the cursor to the bottom edge of another display: the Dock stays.
    `pgrep -x dockjail` prints a process id while the lock is running.
@@ -70,7 +77,8 @@ dockjail on
 ```
 
 macOS ties the Accessibility permission to the exact binary, so it asks again after an update.
-Remove the old `dockjail` entry from the list, add the binary again and enable it.
+Remove the old `dockjail` entry from the list; the agent adds the new binary on its next start, then
+enable it.
 
 ## Uninstall
 
