@@ -15,7 +15,7 @@ class Dockjail < Formula
 
   def caveats
     <<~EOS
-      Lock the Dock to the display it is on:  dockjail on
+      Lock the Dock to this window's display: dockjail on
       List displays and choose one:           dockjail displays / dockjail on INDEX
       Unlock:                                 dockjail off
 

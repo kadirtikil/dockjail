@@ -27,7 +27,7 @@ enum Command {
     Check,
     /// Lock the Dock to a display, immediately and at every login
     On {
-        /// Index from `dockjail displays`; default: the display the Dock is on now
+        /// Index from `dockjail displays`; default: the display this terminal window is on
         index: Option<usize>,
     },
     /// Unlock the Dock and stop locking at login
@@ -87,6 +87,7 @@ fn check() -> Result<(), String> {
 
 fn displays() -> Result<(), String> {
     let dock = dock::current_display();
+    let default = default_display();
 
     println!("{:<6} {:<38} {:<22} TYPE", "INDEX", "UUID", "FRAME");
     for (index, d) in display::list().iter().enumerate() {
@@ -97,6 +98,9 @@ fn displays() -> Result<(), String> {
         if dock == Some(d.id) {
             kind.push("dock");
         }
+        if default == Some(d.id) {
+            kind.push("default");
+        }
         let (origin, size) = (d.frame.origin, d.frame.size);
         let frame = format!("{},{} {}x{}", origin.x, origin.y, size.width, size.height);
         println!("{:<6} {:<38} {:<22} {}", index, d.uuid, frame, kind.join(", "));
@@ -106,13 +110,14 @@ fn displays() -> Result<(), String> {
 
 fn on(index: Option<usize>) -> Result<(), String> {
     require_permission()?;
-    let uuid = match index {
+    let target = match index {
         Some(index) => display::list()
             .get(index)
-            .map(|d| d.uuid.clone())
+            .map(|d| d.id)
             .ok_or_else(|| format!("no display with index {index}, see `dockjail displays`"))?,
-        None => display::uuid_of(dock::current_display().ok_or("cannot determine the display the Dock is on")?),
+        None => default_display().ok_or("cannot determine a display, pick one with `dockjail on INDEX`")?,
     };
+    let uuid = display::uuid_of(target);
 
     let path = launch_agent::install(std::slice::from_ref(&uuid))?;
     println!("installed {}", path.display());
@@ -127,7 +132,18 @@ fn on(index: Option<usize>) -> Result<(), String> {
         ));
     }
     println!("Dock locked to display {uuid}");
+    // dockjail never moves the Dock itself, it only keeps it from leaving.
+    if dock::current_display().is_some_and(|dock| dock != target) {
+        println!(
+            "the Dock is still on another display: push the cursor against the bottom edge of this one to move it here"
+        );
+    }
     Ok(())
+}
+
+/// The display `on` locks to without an index: the one the command was typed on.
+fn default_display() -> Option<u32> {
+    display::of_front_window().or_else(display::under_cursor).or_else(dock::current_display)
 }
 
 fn off() -> Result<(), String> {
