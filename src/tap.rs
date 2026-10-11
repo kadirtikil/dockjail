@@ -11,6 +11,7 @@ use core_graphics::event::{
 };
 use core_graphics::geometry::CGRect;
 
+use crate::logging::log;
 use crate::{display, ffi};
 
 /// Height of the strip at the bottom edge that makes the Dock switch displays.
@@ -52,7 +53,7 @@ fn handle(anchor_uuid: &str, event_type: CGEventType, event: &CGEvent) -> Callba
             let port = TAP_PORT.load(Ordering::SeqCst);
             if !port.is_null() {
                 unsafe { ffi::CGEventTapEnable(port.cast(), true) };
-                eprintln!("event tap was disabled by the system, re-enabled");
+                log!("event tap was disabled by the system, re-enabled");
             }
             return CallbackResult::Keep;
         }

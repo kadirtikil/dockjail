@@ -2,6 +2,7 @@ mod display;
 mod dock;
 mod ffi;
 mod launch_agent;
+mod logging;
 mod permission;
 mod tap;
 
@@ -154,6 +155,6 @@ fn log(lines: usize) -> Result<(), String> {
 
 fn run(display: String) -> Result<(), String> {
     require_permission()?;
-    eprintln!("locking the Dock to display {display}");
+    logging::log!("locking the Dock to display {display}");
     tap::run(display)
 }
